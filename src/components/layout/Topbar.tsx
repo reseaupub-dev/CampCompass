@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import type { Profile } from "@/types";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -70,6 +71,9 @@ export function Topbar({ profile, pageTitle }: TopbarProps) {
           <Bell className="w-4.5 h-4.5" />
           <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-primary" />
         </Button>
+
+        {/* Bascule thème clair / sombre */}
+        <ThemeToggle />
 
         {/* User menu */}
         <DropdownMenu>

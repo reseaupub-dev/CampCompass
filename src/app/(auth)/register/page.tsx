@@ -194,16 +194,14 @@ export default function RegisterPage() {
                       {[1, 2, 3, 4].map((i) => (
                         <div
                           key={i}
-                          className={`h-1 flex-1 rounded-full transition-colors duration-350 ${
-                            i <= strength.score ? strength.color : "bg-white/10"
-                          }`}
+                          className={`h-1 flex-1 rounded-full transition-colors duration-350 ${i <= strength.score ? strength.color : "bg-white/10"
+                            }`}
                         />
                       ))}
                     </div>
-                    <p className={`text-[11px] font-bold ${
-                      strength.score <= 1 ? "text-red-400" :
-                      strength.score === 2 ? "text-amber-400" : "text-emerald-400"
-                    }`}>
+                    <p className={`text-[11px] font-bold ${strength.score <= 1 ? "text-red-400" :
+                        strength.score === 2 ? "text-amber-400" : "text-emerald-400"
+                      }`}>
                       Force : {strength.label}
                     </p>
                   </div>
@@ -224,11 +222,10 @@ export default function RegisterPage() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                     autoComplete="new-password"
-                    className={`h-11 pr-11 rounded-xl bg-white/[0.03] text-white placeholder:text-white/20 transition-all duration-200 ${
-                      mismatch
+                    className={`h-11 pr-11 rounded-xl bg-white/[0.03] text-white placeholder:text-white/20 transition-all duration-200 ${mismatch
                         ? "border-red-500/40 focus-visible:ring-2 focus-visible:ring-red-500/20 focus-visible:border-red-500"
                         : "border-white/10 focus-visible:ring-2 focus-visible:ring-[#ae2453]/20 focus-visible:border-[#ae2453]"
-                    }`}
+                      }`}
                   />
                   <button
                     type="button"
