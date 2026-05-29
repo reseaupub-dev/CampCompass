@@ -29,12 +29,12 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Tableau de bord", roles: "all" },
   { href: "/campaigns", icon: Target, label: "Campagnes", roles: "all" },
-  { href: "/clients", icon: UserCheck, label: "Clients", roles: ["client_relations", "supervisor"] },
-  { href: "/teams", icon: Users, label: "Équipes", roles: ["team_manager", "supervisor"] },
-  { href: "/logistics", icon: Truck, label: "Logistique", roles: ["logistics_manager", "supervisor"] },
-  { href: "/budget", icon: DollarSign, label: "Budget", roles: ["budget_manager", "supervisor"] },
-  { href: "/materials", icon: Package, label: "Matériel", roles: ["equipment_manager", "branding_manager", "supervisor"] },
-  { href: "/reports", icon: FileText, label: "Rapports", roles: ["client_relations", "supervisor"] },
+  { href: "/clients", icon: UserCheck, label: "Clients", roles: ["admin", "client_relations", "supervisor"] },
+  { href: "/teams", icon: Users, label: "Équipes", roles: ["admin", "team_manager", "supervisor"] },
+  { href: "/logistics", icon: Truck, label: "Logistique", roles: ["admin", "logistics_manager", "supervisor"] },
+  { href: "/budget", icon: DollarSign, label: "Budget", roles: ["admin", "budget_manager", "supervisor"] },
+  { href: "/materials", icon: Package, label: "Matériel", roles: ["admin", "equipment_manager", "branding_manager", "supervisor"] },
+  { href: "/reports", icon: FileText, label: "Rapports", roles: ["admin", "client_relations", "supervisor"] },
 ];
 
 function filterNav(role: UserRole): NavItem[] {

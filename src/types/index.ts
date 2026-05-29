@@ -1,4 +1,5 @@
 export type UserRole =
+  | "admin"
   | "client_relations"
   | "planner"
   | "branding_manager"

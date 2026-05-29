@@ -18,6 +18,7 @@ import { AlertCircle, Eye, EyeOff, Loader2, MapPin } from "lucide-react";
 import type { UserRole } from "@/types";
 
 const ROLES: { value: UserRole; label: string }[] = [
+  { value: "admin", label: "Administrateur" },
   { value: "client_relations", label: "Chargé relation client" },
   { value: "planner", label: "Planificateur" },
   { value: "branding_manager", label: "Responsable branding" },
@@ -79,12 +80,12 @@ export default function RegisterPage() {
     }
 
     if (data.user) {
-      await supabase.from("profiles").insert({
+      await supabase.from("profiles").upsert({
         id: data.user.id,
         full_name: fullName,
         email,
         role,
-      });
+      }, { onConflict: "id" });
     }
 
     router.push("/dashboard");

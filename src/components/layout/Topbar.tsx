@@ -16,6 +16,7 @@ import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import type { Profile } from "@/types";
 
 const ROLE_LABELS: Record<string, string> = {
+  admin: "Administrateur",
   client_relations: "Chargé relation client",
   planner: "Planificateur",
   branding_manager: "Resp. branding",
@@ -77,8 +78,7 @@ export function Topbar({ profile, pageTitle }: TopbarProps) {
 
         {/* User menu */}
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-accent transition-colors">
+          <DropdownMenuTrigger className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-accent transition-colors">
               <Avatar className="w-8 h-8">
                 <AvatarFallback className="bg-primary text-white text-xs font-semibold">
                   {getInitials(profile.full_name)}
@@ -93,7 +93,6 @@ export function Topbar({ profile, pageTitle }: TopbarProps) {
                 </p>
               </div>
               <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
-            </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48 bg-card border-border">
             <div className="px-3 py-2">

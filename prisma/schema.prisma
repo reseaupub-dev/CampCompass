@@ -1,0 +1,371 @@
+// ============================================================
+// CampCompass — Prisma Schema
+// Connecté à Supabase PostgreSQL
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum UserRole {
+  admin
+  client_relations
+  planner
+  branding_manager
+  logistics_manager
+  equipment_manager
+  budget_manager
+  team_manager
+  supervisor
+  scout
+}
+
+enum CampaignStatus {
+  brief
+  preparation
+  printing
+  logistics
+  deployment_plan
+  deployment
+  reports
+  closed
+}
+
+enum BudgetCategory {
+  transport
+  accommodation
+  food
+  material
+  communication
+  printing
+  other
+}
+
+enum TaskStatus {
+  pending
+  in_progress
+  completed
+}
+
+enum PrintStatus {
+  ordered
+  in_production
+  received
+  transferred
+}
+
+enum ReportType {
+  affichage
+  gps
+}
+
+// ============================================================
+// PROFILS UTILISATEURS
+// L'id correspond à auth.users.id de Supabase
+// ============================================================
+
+model Profile {
+  id        String   @id @db.Uuid
+  fullName  String   @map("full_name")
+  email     String   @unique
+  role      UserRole
+  avatarUrl String?  @map("avatar_url")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  createdCampaigns  Campaign[]        @relation("CampaignCreator")
+  assignedTasks     Task[]
+  attendanceRecords AttendanceRecord[]
+  comments          Comment[]
+
+  @@map("profiles")
+}
+
+// ============================================================
+// CAMPAGNES — entité centrale
+// ============================================================
+
+model Campaign {
+  id            String         @id @default(uuid()) @db.Uuid
+  name          String
+  clientName    String         @map("client_name")
+  clientCompany String         @default("") @map("client_company")
+  clientEmail   String?        @map("client_email")
+  clientPhone   String?        @map("client_phone")
+  status        CampaignStatus @default(brief)
+  createdById   String         @map("created_by") @db.Uuid
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  createdBy         Profile           @relation("CampaignCreator", fields: [createdById], references: [id])
+  tasks             Task[]
+  budgetLines       BudgetLine[]
+  brandingItems     BrandingItem[]
+  campaignImages    CampaignImage[]
+  printOrders       PrintOrder[]
+  logisticsEntries  LogisticsEntry[]
+  equipmentItems    EquipmentItem[]
+  teamAssignments   TeamAssignment[]
+  deploymentPlans   DeploymentPlan[]
+  attendanceRecords AttendanceRecord[]
+  reports           Report[]
+  comments          Comment[]
+  invoice           Invoice?
+
+  @@map("campaigns")
+}
+
+// ============================================================
+// PHASE 1 — BRIEF CLIENT
+// ============================================================
+
+// Facture / devis client
+model Invoice {
+  id           String    @id @default(uuid()) @db.Uuid
+  campaignId   String    @unique @map("campaign_id") @db.Uuid
+  fileUrl      String?   @map("file_url")
+  amount       Decimal?  @db.Decimal(12, 2)
+  signedAt     DateTime? @map("signed_at")
+  validatedAt  DateTime? @map("validated_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@map("invoices")
+}
+
+// Checklist branding (t-shirts, flyers, goodies…)
+model BrandingItem {
+  id         String  @id @default(uuid()) @db.Uuid
+  campaignId String  @map("campaign_id") @db.Uuid
+  label      String
+  quantity   Int     @default(0)
+  done       Boolean @default(false)
+  notes      String?
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@map("branding_items")
+}
+
+// ============================================================
+// PHASE 2 — PRÉPARATION TECHNIQUE
+// ============================================================
+
+// Images envoyées par le client (16 visuels par campagne)
+model CampaignImage {
+  id           String   @id @default(uuid()) @db.Uuid
+  campaignId   String   @map("campaign_id") @db.Uuid
+  dimensionLabel String @map("dimension_label") // ex: "4x3m", "120x80cm"
+  fileUrl      String?  @map("file_url")
+  uploadedAt   DateTime? @map("uploaded_at")
+  validated    Boolean  @default(false)
+  notes        String?
+  position     Int      @default(0) // ordre 1-16
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@map("campaign_images")
+}
+
+// ============================================================
+// PHASE 3 — IMPRESSIONS
+// ============================================================
+
+model PrintOrder {
+  id           String      @id @default(uuid()) @db.Uuid
+  campaignId   String      @map("campaign_id") @db.Uuid
+  supplier     String?
+  status       PrintStatus @default(ordered)
+  orderedAt    DateTime?   @map("ordered_at")
+  receivedAt   DateTime?   @map("received_at")
+  transferredAt DateTime?  @map("transferred_at")
+  notes        String?
+  createdAt    DateTime    @default(now()) @map("created_at")
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@map("print_orders")
+}
+
+// ============================================================
+// PHASE 4 — LOGISTIQUE & ÉQUIPES
+// ============================================================
+
+// Entrées logistiques (transport, hébergement, restauration, communication)
+model LogisticsEntry {
+  id           String         @id @default(uuid()) @db.Uuid
+  campaignId   String         @map("campaign_id") @db.Uuid
+  category     BudgetCategory
+  description  String
+  estimatedCost Decimal       @default(0) @map("estimated_cost") @db.Decimal(12, 2)
+  actualCost   Decimal?       @map("actual_cost") @db.Decimal(12, 2)
+  validated    Boolean        @default(false)
+  notes        String?
+  createdAt    DateTime       @default(now()) @map("created_at")
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@map("logistics_entries")
+}
+
+// Matériel (batteries, équipements, réparations)
+model EquipmentItem {
+  id          String   @id @default(uuid()) @db.Uuid
+  campaignId  String   @map("campaign_id") @db.Uuid
+  name        String
+  quantity    Int      @default(1)
+  status      String   @default("ok") // ok | repair | missing
+  notes       String?
+  cost        Decimal? @db.Decimal(12, 2)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@map("equipment_items")
+}
+
+// Assignation des membres d'équipe à une campagne
+model TeamAssignment {
+  id         String   @id @default(uuid()) @db.Uuid
+  campaignId String   @map("campaign_id") @db.Uuid
+  memberName String   @map("member_name")
+  role       String   // afficheur, livreur, cadre, nettoyage, etc.
+  phone      String?
+  dailyRate  Decimal? @map("daily_rate") @db.Decimal(12, 2)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  campaign         Campaign          @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  attendanceRecords AttendanceRecord[]
+
+  @@map("team_assignments")
+}
+
+// ============================================================
+// PHASE 5 — PLAN DE DÉPLOIEMENT
+// ============================================================
+
+model DeploymentPlan {
+  id          String    @id @default(uuid()) @db.Uuid
+  campaignId  String    @map("campaign_id") @db.Uuid
+  fileUrl     String?   @map("file_url")
+  zones       String[]  // liste des zones/lieux
+  startDate   DateTime? @map("start_date")
+  endDate     DateTime? @map("end_date")
+  validatedAt DateTime? @map("validated_at")
+  notes       String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@map("deployment_plans")
+}
+
+// ============================================================
+// PHASE 6 — DÉPLOIEMENT TERRAIN
+// ============================================================
+
+// Fiche de présence journalière
+model AttendanceRecord {
+  id               String   @id @default(uuid()) @db.Uuid
+  campaignId       String   @map("campaign_id") @db.Uuid
+  teamAssignmentId String?  @map("team_assignment_id") @db.Uuid
+  profileId        String?  @map("profile_id") @db.Uuid
+  date             DateTime @db.Date
+  hoursWorked      Decimal? @map("hours_worked") @db.Decimal(5, 2)
+  amountDue        Decimal? @map("amount_due") @db.Decimal(12, 2)
+  present          Boolean  @default(true)
+  brandingOk       Boolean  @default(false) @map("branding_ok")
+  photoUrl         String?  @map("photo_url")
+  gpsLat           Decimal? @map("gps_lat") @db.Decimal(10, 7)
+  gpsLng           Decimal? @map("gps_lng") @db.Decimal(10, 7)
+  notes            String?
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  campaign       Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  teamAssignment TeamAssignment? @relation(fields: [teamAssignmentId], references: [id])
+  profile        Profile?        @relation(fields: [profileId], references: [id])
+
+  @@map("attendance_records")
+}
+
+// ============================================================
+// PHASE 7 — RAPPORTS
+// ============================================================
+
+model Report {
+  id         String     @id @default(uuid()) @db.Uuid
+  campaignId String     @map("campaign_id") @db.Uuid
+  type       ReportType
+  fileUrl    String?    @map("file_url")
+  uploadedAt DateTime?  @map("uploaded_at")
+  notes      String?
+  createdAt  DateTime   @default(now()) @map("created_at")
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@map("reports")
+}
+
+// ============================================================
+// FONCTIONNALITÉS TRANSVERSES
+// ============================================================
+
+// Tâches génériques par campagne (toutes phases)
+model Task {
+  id          String     @id @default(uuid()) @db.Uuid
+  campaignId  String     @map("campaign_id") @db.Uuid
+  title       String
+  description String?
+  phase       Int        @default(1) // 1-8
+  status      TaskStatus @default(pending)
+  assignedToId String?   @map("assigned_to") @db.Uuid
+  dueDate     DateTime?  @map("due_date")
+  completedAt DateTime?  @map("completed_at")
+  createdAt   DateTime   @default(now()) @map("created_at")
+
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  assignedTo Profile? @relation(fields: [assignedToId], references: [id])
+
+  @@map("tasks")
+}
+
+// Lignes budgétaires générales
+model BudgetLine {
+  id          String         @id @default(uuid()) @db.Uuid
+  campaignId  String         @map("campaign_id") @db.Uuid
+  label       String
+  category    BudgetCategory
+  estimated   Decimal        @db.Decimal(12, 2)
+  actual      Decimal?       @db.Decimal(12, 2)
+  validated   Boolean        @default(false)
+  createdAt   DateTime       @default(now()) @map("created_at")
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@map("budget_lines")
+}
+
+// Commentaires et historique par campagne
+model Comment {
+  id         String   @id @default(uuid()) @db.Uuid
+  campaignId String   @map("campaign_id") @db.Uuid
+  authorId   String   @map("author_id") @db.Uuid
+  content    String
+  phase      Int?     // phase concernée (1-8), null = général
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  author   Profile  @relation(fields: [authorId], references: [id])
+
+  @@map("comments")
+}
